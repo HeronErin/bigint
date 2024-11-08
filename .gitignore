@@ -1,0 +1,9 @@
+.vscode/
+.idea/
+*.o
+*/*.o
+*/*.out
+*.out
+./bigint
+bigint
+./.clangd
