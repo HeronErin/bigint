@@ -1,8 +1,7 @@
 CC      = gcc
-CFLAGS  = -I "$(shell pwd)"
+CFLAGS  = -I "$(shell pwd)" -g -mavx2 -lm
 DEBUG_FLAGS = -DDEBUG -g
 RM      = rm -f
-
 C_FILES     = $(wildcard lib/*.c)
 O_FILES     = $(C_FILES:.c=.o)
 
@@ -31,7 +30,7 @@ debug_run: CFLAGS += $(DEBUG_FLAGS)
 debug_run: run light_clean
 
 clean: light_clean
-	$(RM) */*.o _tests/*.out _tests/*/*.out | true
+	$(RM) */*.o | true
 
 light_clean:
 	$(RM) ./bigint | true
