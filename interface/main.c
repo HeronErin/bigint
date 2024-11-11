@@ -17,12 +17,12 @@ static inline __m256i _nibbles_to_hex(__m256i nibbles) {
 }
 int main() {
   char* x = alloca(32);
-  for (char i = 0; i < 32; i++) x[i]=(i) | 0xF0;
+  for (char i = 0; i < 32; i++) x[i]=(i);// | 0xF0;
   char out[65] = {0};
   bin_to_hex_32(out, x);
 
-  printf("\n%s\n", out);
-  // for (int i = 0; i < 32; i++) printf("%c%c ", ((unsigned char*) &up)[i], ((unsigned char*) &low)[i]);
+  // printf("\n%s\n", out);
+  for (int i = 0; i < 32; i++) printf("%c%c ", ((unsigned char*) &out)[i*2], ((unsigned char*) &out)[i*2+1]);
 
 
   return 0;

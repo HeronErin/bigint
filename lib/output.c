@@ -27,15 +27,17 @@ static inline  __attribute((always_inline)) __m256i _nibbles_to_hex(__m256i nibb
     __m256i txt_lo = _mm256_unpacklo_epi8(upper_hex, lower_hex);
     __m256i txt_hi = _mm256_unpackhi_epi8(upper_hex, lower_hex);
 
-    // Permute 128-bit lanes to interleave across the full 256-bit width
+
     __m256i result_lo = _mm256_permute2x128_si256(txt_lo, txt_hi, 0x20);
     __m256i result_hi = _mm256_permute2x128_si256(txt_lo, txt_hi, 0x31);
+
 
     _mm256_storeu_si256((__m256i*)dst, result_lo);
     _mm256_storeu_si256((__m256i*)dst + 1, result_hi);;
 }
 
 void bin_to_hex_32(void* restrict dst, const void* restrict src) { _bin_to_hex_32(dst, src); }
+
 char* dump_hex(const void* restrict src, size_t n) {
     char* dst = calloc(1, n * 2 + 1);
 
