@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include <stdio.h>
-static inline __m256i _nibbles_to_hex(__m256i nibbles) {
+static inline  __attribute((always_inline)) __m256i _nibbles_to_hex(__m256i nibbles) {
     // Greater than 9 gives an invalid result, the rest is to fix that
     __m256i pseudo_hex = _mm256_add_epi8(nibbles, _mm256_set1_epi8('0'));
 
