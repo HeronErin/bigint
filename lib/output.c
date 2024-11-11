@@ -1,9 +1,8 @@
-#include "math.h"
 #include <immintrin.h>
 #include <string.h>
 
-#include <stdio.h>
 static inline  __attribute((always_inline)) __m256i _nibbles_to_hex(__m256i nibbles) {
+
     // Greater than 9 gives an invalid result, the rest is to fix that
     __m256i pseudo_hex = _mm256_add_epi8(nibbles, _mm256_set1_epi8('0'));
 
@@ -38,9 +37,7 @@ static inline  __attribute((always_inline)) __m256i _nibbles_to_hex(__m256i nibb
 
 void bin_to_hex_32(void* restrict dst, const void* restrict src) { _bin_to_hex_32(dst, src); }
 
-char* dump_hex(const void* restrict src, size_t n) {
-    char* dst = calloc(1, n * 2 + 1);
-
+void dump_hex_into(void* restrict dst, const void* restrict src, size_t n) {
     char* cdest = dst;
     while (n >= 32) {
         _bin_to_hex_32(cdest, src);
@@ -56,5 +53,13 @@ char* dump_hex(const void* restrict src, size_t n) {
         cdest += n*2;
     }
     cdest[0] = 0;
+}
+
+
+char* dump_hex(const void* restrict src, size_t n) {
+    char* dst = malloc(n * 2 + 1);
+    dump_hex_into(dst, src, n);
     return dst;
 }
+
+

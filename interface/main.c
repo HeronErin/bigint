@@ -2,21 +2,15 @@
 #include <stdio.h>
 
 #include <immintrin.h>
-#include <lib/output.h>
+#include <lib/bigint.h>
 
-#include "benchmark.h"
-#include <unistd.h>
-
-
-void test() {
-
-  usleep(0.2e6);
-}
 
 
 int main() {
-  // printf("t\n");
-  printf("Estimated time: %f\n", benchmark(&test, 10, 5.0));
+
+  Bigint* bi = bigint_from(0x1690000);
+  bigint_segment_shl(&bi, 1);
+  printf("%lu\n%s\n", bi->size, bigint_hexdump(bi));
 
   return 0;
 }

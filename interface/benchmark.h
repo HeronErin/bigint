@@ -7,7 +7,7 @@ typedef void (*voidfunc_t)();
 
 
 
-// Run a function many times benchmarking it. Error +/- 0.2%
+// Run a function many times benchmarking it. Error +/- ~0.2%
 //
 // Param func: Function to be called
 // Param run_amount: Percision amount. Bigger = closer to actual fuction runtime, but may go beyond time_interval
