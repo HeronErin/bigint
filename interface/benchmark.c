@@ -1,14 +1,8 @@
 #include "benchmark.h"
 
 #include <math.h>
-#include <stdio.h>
 #include <sys/time.h>
 
-static double time_diff_sec(struct timespec start, struct timespec end) {
-    return (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-}
-
-#include <unistd.h>
 size_t ubenchmark(const voidfunc_t func, const size_t run_amount, const double time_interval){
     struct timespec start, end, max;
     size_t ran_amount = 0;
