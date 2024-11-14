@@ -13,13 +13,14 @@ int main() {
   // ((size_t*) bi->segments[0].data)[3] = -1;
   //
   //
-  bigint_segment_shl(&bi, 1);
+  // bigint_segment_shl(&bi, 1);
 
   //
   // printf("#1: %x\n", (unsigned char)bi->segments[0].data[0]);
   printf("%lu\n%s\n", bi->size, bigint_hexdump(bi));
 
-  bigint_segment_shr(&bi, 1);
+  // bigint_segment_shr(&bi, 1);
+  bigint_byte_shr_memmove(&bi, 3);
   printf("%lu\n%s\n", bi->size, bigint_hexdump(bi));
 
 

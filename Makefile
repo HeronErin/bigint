@@ -1,5 +1,5 @@
-CC      = gcc
-CFLAGS  = -I "$(shell pwd)" -g -march=native -lm
+CC      = clang
+CFLAGS  = -I "$(shell pwd)" -g -march=native
 DEBUG_FLAGS = -DDEBUG -g
 RM      = rm -f
 C_FILES     = $(wildcard lib/*.c)
