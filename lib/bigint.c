@@ -11,52 +11,91 @@ char* bigint_hexdump(const Bigint* restrict bigint) {
     for (size_t segment_index = bigint->size-1; segment_index != -1; segment_index--) {
         const struct _Bigint_Segment seg = bigint->segments[segment_index];
 
-        dump_hex_into(curr_dest, seg.data, seg.size);
-        curr_dest += seg.size*2;
+        debug_assert(seg.size % 32 == 0);
+        for (size_t offset = seg.size - 32; offset != -32; offset -= 32) {
+            bin_to_hex_32_r(curr_dest, seg.data + offset);
+            curr_dest += 64;
+        }
+
     }
     *curr_dest = 0;
 
     return buf;
 }
+void bigint_segment_shl(Bigint** bigint, uint16_t amount) {
+    if (!amount) return;
+    bigint_grow_for(bigint, (*bigint)->size + amount);
+    Bigint* bi = *bigint;
 
-void bigint_byte_shr_memcpy(Bigint** bigint_ptr, size_t amount) {
+    if (!bi->size) return;
+
+    bi->size += (size_t)amount;
+
+    memmove(bi->segments + amount, bi->segments, BIGINT_SEGMENT_OBJ_SIZE * amount);
+
+    for (size_t i = 0; i < amount; i++) {
+        char* segment = aligned_alloc(32, SEGMENT_SIZE);
+        memset(segment, 0,  SEGMENT_SIZE);
+
+        bi->segments[i].size = SEGMENT_SIZE;
+        bi->segments[i].data = segment;
+    }
+}
+void bigint_segment_shr(Bigint** bigint, uint16_t amount) {
+    if (!amount) return;
+    Bigint* bi = *bigint;
+    if (amount >= bi->size) {
+        for (size_t i = 0; i < bi->size; i++) free(bi->segments[i].data);
+        bi->size = 0;
+        return;
+    }
+
+    for (size_t i = 0; i < amount; i++) free(bi->segments[i].data);
+    size_t new_size = bi->size - amount;
+    bi->size = new_size;
+    memmove(bi->segments, bi->segments + amount, new_size * BIGINT_SEGMENT_OBJ_SIZE);
+}
+
+void bigint_f_prune(Bigint* bigint) {
+    start:
+    if (!bigint->size) return;
+
+    struct _Bigint_Segment* segment = &bigint->segments[bigint->size - 1];
+    const char* end = segment->data;
+    size_t size = segment->size;
+    char* curr = segment->data + size - sizeof(size_t);
+
+    for (;curr >= end; curr-=sizeof(size_t)) {
+        size_t item = *(size_t*)curr;
+        if (item) break;
+        size -= sizeof(size_t);
+    }
+    if (end  == curr + sizeof(size_t)) {
+        free(segment->data);
+        bigint->size--;
+        goto start;
+    }
+    size_t r = size % 32;
+    segment->size = size + (r ? 32 - r : 0);
+}
+
+void bigint_byte_shr_memmove(Bigint** bigint_ptr, size_t amount) {
+    Bigint* bi = *bigint_ptr;
+    if (amount >= SEGMENT_SIZE) {
+        bigint_segment_shr(bigint_ptr, amount / SEGMENT_SIZE);
+        amount = amount % SEGMENT_SIZE;
+    }
     if (!amount) return;
 
+    for (size_t i = 0; i < bi->size; i++) {
+        struct _Bigint_Segment* segment = &bi->segments[i];
+        memmove(segment->data, segment->data + amount, segment->size - amount);
+        if (i+1 != bi->size) {
+            memcpy(segment->data + segment->size - amount, bi->segments[i+1].data, amount);
+            if (amount > bi->segments[i+1].size)
+                memset(segment->data + segment->size - amount + bi->segments[i+1].size, 0, amount - bi->segments[i+1].size);
 
-    if (amount > SEGMENT_SIZE) {
-        bigint_segment_shr(bigint_ptr, amount / SEGMENT_SIZE);
-        amount %= SEGMENT_SIZE;
+        }else
+            memset(segment->data + segment->size - amount, 0, amount);
     }
-
-    Bigint* bigint = *bigint_ptr;
-
-    // Buffer where we temporarily put bytes to be put for the next segment
-    char* temp;
-    if (bigint->size <= 1) temp = NULL;
-    else if (amount > 1024) temp = malloc(amount);
-    else temp = alloca(amount);
-
-    size_t amount_in_temp = 0;
-    size_t current_amount_to_temp = 0;
-
-    for (size_t segment_index = bigint->size-1; segment_index != -1; segment_index--) {
-        const struct _Bigint_Segment seg = bigint->segments[segment_index];
-
-        if (segment_index != 0) {
-            current_amount_to_temp = seg.size > amount ? amount : seg.size;
-            memcpy(temp, seg.data + seg.size - current_amount_to_temp, current_amount_to_temp);
-        }
-        if (seg.size > amount) {
-            memmove(seg.data + amount, seg.data, seg.size - amount);
-            memcpy(seg.data, temp, amount_in_temp);
-        }else {
-            debug_assert(segment_index == bigint->size-1);
-            free(seg.data);
-            bigint->size--;
-            bigint->segments[segment_index].data = NULL;
-        }
-        amount_in_temp = current_amount_to_temp;
-    }
-
-    if (amount > 1024) free(temp);
 }

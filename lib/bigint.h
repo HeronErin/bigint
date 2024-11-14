@@ -3,8 +3,14 @@
 
 
 #ifndef SEGM_SIZE
-// 4096 bytes max segment size
-#define SEGMENT_SIZE (1 << 8)
+// 256 bytes max segment size
+#define SEGMENT_SIZE (1 << 10)
+#endif
+
+
+#ifndef STACK_THRESHOLD
+// Maximum amount of memory that can be used as a temp buffer on the stack
+#define STACK_THRESHOLD (1 << 11)
 #endif
 
 #include <stdlib.h>
@@ -28,7 +34,8 @@ typedef struct {
     // Amount of possible segments
     size_t capacity;
 
-    // Everything is big endian
+    // Everything is LITTLE endian. This means the smallest
+    // least significant segments come first
     struct _Bigint_Segment segments[];
 } Bigint;
 
@@ -51,9 +58,10 @@ static inline Bigint* bigint_with_capacity(size_t capacity) {
 static inline Bigint* bigint_from(size_t value) {
     Bigint* bi = bigint_with_capacity(1);
     bi->size = 1;
-    bi->segments[0].size = sizeof(size_t);
-    bi->segments[0].data = calloc(1, SEGMENT_SIZE);
-    *(size_t*)(bi->segments[0].data) = htobe64(value);
+    bi->segments[0].size = SEGMENT_SIZE;
+    bi->segments[0].data = aligned_alloc(32, SEGMENT_SIZE);
+    memset(bi->segments[0].data, 0, SEGMENT_SIZE);
+    *(size_t*)(bi->segments[0].data) = htole64(value);
     return bi;
 }
 static inline void bigint_grow_for(Bigint** bigint, size_t new_size) {
@@ -81,33 +89,21 @@ char* bigint_hexdump(const Bigint* restrict bigint);
 
 // Discard n segments from the beginning of the bigint.
 // Ie: INT >> (SEGMENT_SIZE*8*n)
-static inline void bigint_segment_shr(Bigint** bigint, uint16_t amount) {
-    Bigint* bi = *bigint;
-    if (amount >= bi->size) {
-        for (size_t i = 0; i < bi->size; i++) free(bi->segments[i].data);
-        bi->size = 0;
-        return;
-    }
+void bigint_segment_shr(Bigint** bigint, uint16_t amount);
 
-    for (size_t i = 0; i < amount; i++) free(bi->segments[i].data);
-    size_t new_size = bi->size - amount;
-    bi->size = new_size;
-    memmove(bi->segments, bi->segments + amount, new_size * BIGINT_SEGMENT_OBJ_SIZE);
-}
 // Place n zero filled segments at the beginning of the bigint.
 // Ie: INT << (SEGMENT_SIZE*8*n)
-static inline void bigint_segment_shl(Bigint** bigint, uint16_t amount) {
-    bigint_grow_for(bigint, (*bigint)->size + amount);
-    Bigint* bi = *bigint;
+void bigint_segment_shl(Bigint** bigint, uint16_t amount);
 
-    if (bi->size)
-        bi->segments[bi->size - 1].size = SEGMENT_SIZE;
-
-}
+// Remove leading most zeros from final segment
+void bigint_f_prune(Bigint* bigint);
 
 
 
-// Byte shift right. Ie 5 >> (8*n)
-void bigint_byte_shr_memcpy(Bigint** bigint_ptr, size_t amount);
-// Byte shift left. Ie 5 << (8*n)
-char* bigint_byte_shl_memcpy(Bigint** bigint, size_t amount);
+
+// Byte shift right.
+// Ie INT >> (8*n)
+void bigint_byte_shr_memmove(Bigint** bigint_ptr, size_t amount);
+// Byte shift left.
+// Ie INT << (8*n)
+void bigint_byte_shl_memcpy(Bigint** bigint, size_t amount);
