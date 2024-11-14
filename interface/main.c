@@ -8,7 +8,7 @@
 
 int main() {
 
-  Bigint* bi = bigint_from(0x123456789abcdef);
+  BigInt* bi = bigint_from(0x123456789abcdef);
 
   // ((size_t*) bi->segments[0].data)[0] = 0x12345678;
 
