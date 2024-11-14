@@ -24,7 +24,7 @@ static inline __m256i _nibbles_to_hex(__m256i nibbles) {
     return _mm256_add_epi8(pseudo_hex, letter_addr);
 }
 
-static inline void _bin_to_hex_32(void *restrict dst, __m256i data) {
+static inline void bin_to_hex_32(void *restrict dst, __m256i data) {
     // Get lower halfs of the binary isolated and convert to ascii
     __m256i lower_hex = _nibbles_to_hex(_mm256_and_si256(data, _mm256_set1_epi8(0x0F)));
 

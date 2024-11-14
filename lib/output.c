@@ -1,14 +1,11 @@
 #include <string.h>
 #include "output.h"
 
-//
-// void bin_to_hex_32(void* restrict dst, const void* restrict src) { _bin_to_hex_32(dst, _mm256_loadu_si256((__m256i *) src)); }
-// void bin_to_hex_32_r(void* restrict dst, const void* restrict src) { _bin_to_hex_32(dst, _reverse(_mm256_loadu_si256((__m256i *) src))); }
 
 void dump_hex_into(void *restrict dst, const void *restrict src, size_t n) {
     char *cdest = dst;
     while (n >= 32) {
-        _bin_to_hex_32(cdest, _mm256_loadu_si256((__m256i *) src));
+        bin_to_hex_32(cdest, _mm256_loadu_si256((__m256i *) src));
         cdest += 64;
         src += 32;
         n -= 32;
@@ -16,7 +13,7 @@ void dump_hex_into(void *restrict dst, const void *restrict src, size_t n) {
     if (n) {
         char temp[64];
         // Just ignore the fact we are reading out of bounds
-        _bin_to_hex_32(temp, _mm256_loadu_si256((__m256i *) src));
+        bin_to_hex_32(temp, _mm256_loadu_si256((__m256i *) src));
         memcpy(cdest, temp, n * 2);
         cdest += n * 2;
     }

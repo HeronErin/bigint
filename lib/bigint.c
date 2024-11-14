@@ -8,20 +8,19 @@ char *bigint_hexdump(const BigInt *restrict bigint) {
     // Upperbound of possible output sizes
     char *buf = malloc(bigint->size * SEGMENT_SIZE * 2 + 1);
     char *curr_dest = buf;
-    char has_printed = 0;
+    char do_print = 0;
 
 
     for (size_t segment_index = bigint->size - 1; segment_index != -1; segment_index--) {
         char *seg = bigint->segments[segment_index];
         for (size_t offset = SEGMENT_SIZE - 32; offset != -32; offset -= 32) {
             __m256i data = _mm256_load_si256((__m256i *) (seg + offset));
-            const int is_not_zero = _mm256_movemask_epi8(_mm256_cmpeq_epi8(data, _mm256_setzero_si256())) != 0xFFFFFFFF;
-            if (is_not_zero | has_printed) {
-                _bin_to_hex_32(curr_dest, _reverse(data));
-                curr_dest += 64;
-            }
+            do_print |= _mm256_movemask_epi8(_mm256_cmpeq_epi8(data, _mm256_setzero_si256())) != -1;
 
-            has_printed |= is_not_zero;
+            if (!do_print) continue;
+
+            bin_to_hex_32(curr_dest, _reverse(data));
+            curr_dest += 64;
         }
     }
     *curr_dest = 0;
