@@ -94,3 +94,5 @@ void bigint_byte_shl_memmove(BigInt **bigint, size_t amount);
 // Byte shift right.
 // Ie INT >> (8*n)
 void bigint_byte_shr_memmove(BigInt **bigint_ptr, size_t amount);
+
+void bigint_byte_shr_bsrli(BigInt** ptr, size_t cnt);

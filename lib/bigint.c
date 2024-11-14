@@ -93,5 +93,33 @@ void bigint_byte_shr_memmove(BigInt **bigint_ptr, size_t amount) {
     }
 }
 
-void bigint_byte_shr_bsrli(BigInt **ptr, size_t cnt) {
+void bigint_byte_shr_bsrli(BigInt** ptr, size_t cnt)
+{
+    const __m256i mask = _mm256_set_epi8(
+        0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    );
+
+    BigInt* bi = *ptr;
+    __m256i lo = _mm256_setzero_si256();
+    for (int i = 0; i < cnt; i++)
+    {
+        for (int j = 0; j < bi->size; j++)
+        {
+            char* segment = bi->segments[j];
+            for (int k = 0; k < SEGMENT_SIZE / 32; k++)
+            {
+                __m256i vec = ((__m256i*)segment)[k];
+                __m256i carry = _mm256_and_si256(vec, mask);
+                vec = _mm256_bsrli_epi128(vec, 1);
+                carry = _mm256_permute4x64_epi64(carry, 0b01101100);
+                carry = _mm256_bslli_epi128(carry, 15);
+                __m256i hi = _mm256_insert_epi8(carry, 0, 0);
+                vec = _mm256_or_si256(vec, lo);
+                lo = _mm256_insert_epi8(carry, 0, 16);
+                vec = _mm256_or_si256(vec, hi);
+                ((__m256i*)segment)[k] = vec;
+            }
+        }
+    }
 }
