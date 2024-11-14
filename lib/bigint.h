@@ -48,6 +48,7 @@ static inline Bigint* bigint_new() {
 
     return bigint;
 }
+
 static inline Bigint* bigint_with_capacity(size_t capacity) {
     Bigint* bigint = calloc(1, sizeof(Bigint) + capacity * BIGINT_SEGMENT_OBJ_SIZE);
     bigint->size = 0;
@@ -55,6 +56,7 @@ static inline Bigint* bigint_with_capacity(size_t capacity) {
 
     return bigint;
 }
+
 static inline Bigint* bigint_from(size_t value) {
     Bigint* bi = bigint_with_capacity(1);
     bi->size = 1;
@@ -64,6 +66,7 @@ static inline Bigint* bigint_from(size_t value) {
     *(size_t*)(bi->segments[0].data) = htole64(value);
     return bi;
 }
+
 static inline void bigint_grow_for(Bigint** bigint, size_t new_size) {
     Bigint* curr = *bigint;
     if (new_size <= curr->capacity) return;
@@ -79,7 +82,6 @@ static inline void bigint_grow_for(Bigint** bigint, size_t new_size) {
     debug_assert(*bigint != NULL);
 }
 
-
 static inline void bigint_free(Bigint* bigint) {
     for (size_t i = 0; i < bigint->size; i++) free(bigint->segments[i].data);
     free(bigint);
@@ -87,23 +89,22 @@ static inline void bigint_free(Bigint* bigint) {
 
 char* bigint_hexdump(const Bigint* restrict bigint);
 
-// Discard n segments from the beginning of the bigint.
-// Ie: INT >> (SEGMENT_SIZE*8*n)
-void bigint_segment_shr(Bigint** bigint, uint16_t amount);
-
 // Place n zero filled segments at the beginning of the bigint.
 // Ie: INT << (SEGMENT_SIZE*8*n)
 void bigint_segment_shl(Bigint** bigint, uint16_t amount);
+
+// Discard n segments from the beginning of the bigint.
+// Ie: INT >> (SEGMENT_SIZE*8*n)
+void bigint_segment_shr(Bigint** bigint, uint16_t amount);
 
 // Remove leading most zeros from final segment
 void bigint_f_prune(Bigint* bigint);
 
 
-
+// Byte shift left.
+// Ie INT << (8*n)
+void bigint_byte_shl_memcpy(Bigint** bigint, size_t amount);
 
 // Byte shift right.
 // Ie INT >> (8*n)
 void bigint_byte_shr_memmove(Bigint** bigint_ptr, size_t amount);
-// Byte shift left.
-// Ie INT << (8*n)
-void bigint_byte_shl_memcpy(Bigint** bigint, size_t amount);

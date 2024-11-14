@@ -12,6 +12,7 @@ static inline  __m256i _reverse(__m256i dt) {
     return  _mm256_permute2x128_si256(shuffed,shuffed,1);
 
 }
+
 static inline  __m256i _nibbles_to_hex(__m256i nibbles) {
 
     // Greater than 9 gives an invalid result, the rest is to fix that
@@ -24,7 +25,8 @@ static inline  __m256i _nibbles_to_hex(__m256i nibbles) {
     __m256i letter_addr = _mm256_and_si256(msk, _mm256_set1_epi8('A' - '0' - 10));
     return _mm256_add_epi8(pseudo_hex, letter_addr);
 }
-static inline void _bin_to_hex_32(void* restrict dst, __m256i data){
+
+static inline void _bin_to_hex_32(void* restrict dst, __m256i data) {
 
     // Get lower halfs of the binary isolated and convert to ascii
     __m256i lower_hex = _nibbles_to_hex( _mm256_and_si256(data, _mm256_set1_epi8(0x0F)) );

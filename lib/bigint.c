@@ -22,12 +22,16 @@ char* bigint_hexdump(const Bigint* restrict bigint) {
 
     return buf;
 }
+
 void bigint_segment_shl(Bigint** bigint, uint16_t amount) {
-    if (!amount) return;
+    if (amount == 0) 
+        return;
+        
     bigint_grow_for(bigint, (*bigint)->size + amount);
     Bigint* bi = *bigint;
 
-    if (!bi->size) return;
+    if (!bi->size) 
+        return;
 
     bi->size += (size_t)amount;
 
@@ -41,16 +45,23 @@ void bigint_segment_shl(Bigint** bigint, uint16_t amount) {
         bi->segments[i].data = segment;
     }
 }
+
 void bigint_segment_shr(Bigint** bigint, uint16_t amount) {
-    if (!amount) return;
+    if (amount == 0) 
+        return;
+
     Bigint* bi = *bigint;
     if (amount >= bi->size) {
-        for (size_t i = 0; i < bi->size; i++) free(bi->segments[i].data);
+        for (size_t i = 0; i < bi->size; i++) 
+            free(bi->segments[i].data);
+
         bi->size = 0;
         return;
     }
 
-    for (size_t i = 0; i < amount; i++) free(bi->segments[i].data);
+    for (size_t i = 0; i < amount; i++) 
+        free(bi->segments[i].data);
+
     size_t new_size = bi->size - amount;
     bi->size = new_size;
     memmove(bi->segments, bi->segments + amount, new_size * BIGINT_SEGMENT_OBJ_SIZE);
@@ -58,7 +69,8 @@ void bigint_segment_shr(Bigint** bigint, uint16_t amount) {
 
 void bigint_f_prune(Bigint* bigint) {
     start:
-    if (!bigint->size) return;
+    if (bigint->size == 0) 
+        return;
 
     struct _Bigint_Segment* segment = &bigint->segments[bigint->size - 1];
     const char* end = segment->data;
@@ -70,11 +82,13 @@ void bigint_f_prune(Bigint* bigint) {
         if (item) break;
         size -= sizeof(size_t);
     }
+
     if (end  == curr + sizeof(size_t)) {
         free(segment->data);
         bigint->size--;
         goto start;
     }
+
     size_t r = size % 32;
     segment->size = size + (r ? 32 - r : 0);
 }
@@ -85,17 +99,19 @@ void bigint_byte_shr_memmove(Bigint** bigint_ptr, size_t amount) {
         bigint_segment_shr(bigint_ptr, amount / SEGMENT_SIZE);
         amount = amount % SEGMENT_SIZE;
     }
-    if (!amount) return;
+
+    if (amount == 0) 
+        return;
 
     for (size_t i = 0; i < bi->size; i++) {
         struct _Bigint_Segment* segment = &bi->segments[i];
         memmove(segment->data, segment->data + amount, segment->size - amount);
-        if (i+1 != bi->size) {
+        if (i+1 == bi->size) 
+            memset(segment->data + segment->size - amount, 0, amount);
+        else {
             memcpy(segment->data + segment->size - amount, bi->segments[i+1].data, amount);
             if (amount > bi->segments[i+1].size)
                 memset(segment->data + segment->size - amount + bi->segments[i+1].size, 0, amount - bi->segments[i+1].size);
-
-        }else
-            memset(segment->data + segment->size - amount, 0, amount);
+        }
     }
 }
