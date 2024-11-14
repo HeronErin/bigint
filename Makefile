@@ -8,14 +8,29 @@ O_FILES     = $(C_FILES:.c=.o)
 INTERFACE_C_FILES = $(wildcard interface/*.c)
 INTERFACE_O_FILES = $(INTERFACE_C_FILES:.c=.o)
 
+BENCHMARK_C_FILES = $(wildcard benchmarks/*.c)
+BENCHMARK_O_FILES    = $(BENCHMARK_C_FILES:.c=.out)
+
 default: bigint
 all: bigint
+
+
+benchmark: $(BENCHMARK_O_FILES)
+	echo $(BENCHMARK_O_FILES)
+	@for test in $(BENCHMARK_O_FILES); do \
+		echo "Running $$test"; \
+		./$$test; \
+	done
+
+
 
 objs: $(O_FILES)
 
 bigint: objs $(INTERFACE_O_FILES)
 	$(CC) $(CFLAGS) -o bigint $(O_FILES) $(INTERFACE_O_FILES)
 
+%.out : %.c
+	$(CC) $(CFLAGS) -o $@ $< $(O_FILES)
 %.o : %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
