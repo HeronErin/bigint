@@ -118,17 +118,92 @@ void bigint_byte_shr_bsrli(BigInt **ptr, size_t cnt) {
     }
 }
 
+char _segment_adc(unsigned char carry, void *x, void *y) {
+    uint64_t *dst = x;
+    uint64_t *src = y;
+    uint64_t *end = (uint64_t *) ((char *) x + SEGMENT_SIZE);
 
-void bigint_add(BigInt **a, BigInt *b) {
-    uint8_t carry = 0;
-    BigInt *a_tmp = *a;
 
-    size_t seg_len_min = a_tmp->size > b->size ? b->size : a_tmp->size;
-    for (size_t i = 0; i < seg_len_min; i++) {
-        char *a_seg = a_tmp->segments[i];
-        char *b_seg = b->segments[i];
+    while (dst != end) {
+        carry = _addcarryx_u64(carry, dst[0], src[0], (unsigned long long *) &dst[0]);
+        carry = _addcarryx_u64(carry, dst[1], src[1], (unsigned long long *) &dst[1]);
+        carry = _addcarryx_u64(carry, dst[2], src[2], (unsigned long long *) &dst[2]);
+        carry = _addcarryx_u64(carry, dst[3], src[3], (unsigned long long *) &dst[3]);
+        dst += 4;
+        src += 4;
     }
+    return carry;
+}
+
+char _expanded_adc_carry(unsigned char carry, void *x) {
+    uint64_t *dst = x;
+    uint64_t *end = (uint64_t *) ((char *) x + SEGMENT_SIZE);
+
+
+    while (dst != end && carry) {
+        carry = _addcarryx_u64(carry, dst[0], 0, (unsigned long long *) &dst[0]);
+        carry = _addcarryx_u64(carry, dst[1], 0, (unsigned long long *) &dst[1]);
+        carry = _addcarryx_u64(carry, dst[2], 0, (unsigned long long *) &dst[2]);
+        carry = _addcarryx_u64(carry, dst[3], 0, (unsigned long long *) &dst[3]);
+        dst += 4;
+    }
+    return carry;
+}
+
+char _segment_sdc(unsigned char carry, void *x, void *y, size_t s) {
+    uint64_t *dst = x;
+    uint64_t *src = y;
+    uint64_t *end = (uint64_t *) ((char *) x + s);
+
+
+    while (dst != end) {
+        carry = _subborrow_u64(carry, dst[0], src[0], (unsigned long long *) &dst[0]);
+        carry = _subborrow_u64(carry, dst[1], src[1], (unsigned long long *) &dst[1]);
+        carry = _subborrow_u64(carry, dst[2], src[2], (unsigned long long *) &dst[2]);
+        carry = _subborrow_u64(carry, dst[3], src[3], (unsigned long long *) &dst[3]);
+        dst += 4;
+        src += 4;
+    }
+    return carry;
 }
 
 
+// *a +=  b
+void bigint_adc(BigInt **a, BigInt *b) {
+    BigInt *a_ = *a;
+    size_t min_size = a_->size < b->size ? a_->size : b->size;
+    unsigned char carry = 0;
+    for (size_t i = 0; i < min_size; i++) {
+        carry = _segment_adc(carry, a_->segments[i], b->segments[i]);
+    }
+
+    if (a_->size > b->size) {
+        // Carry the Bitch onward
+        for (size_t i = min_size; i < a_->size && carry; i++)
+            carry = _expanded_adc_carry(carry, a_->segments[i]);
+    } else if (a_->size < b->size) {
+        // a's new segments will just be from b + carry
+
+        bigint_grow_for(a, b->capacity);
+        a_ = *a;
+        a_->size = b->size;
+        for (size_t i = min_size; i < b->size; i++) {
+            char *new_seg = aligned_alloc(32, SEGMENT_SIZE);
+            memcpy(new_seg, b->segments[i], SEGMENT_SIZE);
+            a_->segments[i] = new_seg;
+        }
+
+        for (size_t i = min_size; i < b->size; i++)
+            carry = _expanded_adc_carry(carry, a_->segments[i]);
+    }
+    if (!carry) return;
+
+    bigint_grow_for(a, a_->size + 1);
+    a_ = *a;
+    char *new_seg = aligned_alloc(32, SEGMENT_SIZE);
+    memset(new_seg, 0, SEGMENT_SIZE);
+    *new_seg = carry;
+    a_->segments[a_->size] = new_seg;
+    a_->size++;
+}
 

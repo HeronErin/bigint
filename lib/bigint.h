@@ -112,7 +112,10 @@ void bigint_byte_shr_bsrli(BigInt **ptr, size_t cnt);
 
 // Add two BigInts together
 // A = A + b
-void bigint_add(BigInt **a, BigInt *b);
+//
+// Param a: Number to be added to
+// Param b: Number to add
+void bigint_adc(BigInt **a, BigInt *b);
 
 
 
