@@ -13,6 +13,7 @@
 #define STACK_THRESHOLD (1 << 11)
 #endif
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -33,12 +34,14 @@ typedef struct {
 
 
 static inline BigInt *bigint_new() {
+    static_assert(__BYTE_ORDER__ == LITTLE_ENDIAN, "Only little endian architecture allowed!!!!!!!");
     BigInt *bigint = calloc(1, sizeof(BigInt) + 1024 * sizeof(char *));
     bigint->size = 0;
     bigint->capacity = 4;
 
     return bigint;
 }
+
 
 static inline BigInt *bigint_with_capacity(size_t capacity) {
     BigInt *bigint = calloc(1, sizeof(BigInt) + capacity * sizeof(char *));
@@ -48,12 +51,22 @@ static inline BigInt *bigint_with_capacity(size_t capacity) {
     return bigint;
 }
 
+
+static inline BigInt *bigint_zeroed_of_size(size_t size) {
+    BigInt *bi = bigint_with_capacity(size);
+    for (int i = 0; i < bi->capacity; i++) {
+        bi->segments[i] = calloc(1, SEGMENT_SIZE);
+    }
+    return bi;
+}
+
+
 static inline BigInt *bigint_from(uint64_t value) {
     BigInt *bi = bigint_with_capacity(128);
     bi->size = 1;
     bi->segments[0] = aligned_alloc(32, SEGMENT_SIZE);
     memset(bi->segments[0], 0, SEGMENT_SIZE);
-    *(uint64_t *) bi->segments[0] = htole64(value);
+    *(uint64_t *) bi->segments[0] = value;
     return bi;
 }
 
@@ -95,4 +108,12 @@ void bigint_byte_shl_memmove(BigInt **bigint, size_t amount);
 // Ie INT >> (8*n)
 void bigint_byte_shr_memmove(BigInt **bigint_ptr, size_t amount);
 
-void bigint_byte_shr_bsrli(BigInt** ptr, size_t cnt);
+void bigint_byte_shr_bsrli(BigInt **ptr, size_t cnt);
+
+// Add two BigInts together
+// A = A + b
+void bigint_add(BigInt **a, BigInt *b);
+
+
+
+

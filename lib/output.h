@@ -1,5 +1,6 @@
 #pragma once
 #include <immintrin.h>
+#include <stdio.h>
 
 
 static inline __m256i _reverse(__m256i dt) {
@@ -42,6 +43,12 @@ static inline void bin_to_hex_32(void *restrict dst, __m256i data) {
 
     _mm256_storeu_si256((__m256i *) dst, result_lo);
     _mm256_storeu_si256((__m256i *) dst + 1, result_hi);;
+}
+
+static inline void print_vec(__m256i data) {
+    char dst[65];
+    bin_to_hex_32(dst, data);
+    printf("%s\n", dst);
 }
 
 // Safety: dst MUST BE >= n*2 + 2

@@ -1,33 +1,25 @@
 
+#include <assert.h>
 #include <stdio.h>
 
 #include <immintrin.h>
 #include <lib/bigint.h>
+#include <lib/output.h>
 
+
+#include <endian.h>
 
 int main() {
-  BigInt *bi = bigint_from(0x123456789abcdef);
-
-  // ((size_t*) bi->segments[0].data)[0] = 0x12345678;
-
-  // ((size_t*) bi->segments[0].data)[3] = -1;
+  // BigInt *x = bigint_from(-1);
+  // BigInt *y = bigint_from(2);
   //
+  // // bigint_free(bi);
   //
-  // bigint_segment_shl(&bi, 1);
+  // printf("0x%s\n", bigint_hexdump(x));
+  // printf("0x%s\n", bigint_hexdump(y));
+  uint8_t Z = 0;
+  _add_single(&Z, _mm256_set1_epi8(-1), _mm256_set1_epi8(3));
 
-  //
-  // printf("#1: %x\n", (unsigned char)bi->segments[0].data[0]);
-  printf("%lu\n%s\n", bi->size, bigint_hexdump(bi));
-
-  // bigint_segment_shr(&bi, 1);
-  bigint_byte_shr_memmove(&bi, 3);
-  printf("%lu\n%s\n", bi->size, bigint_hexdump(bi));
-
-
-  // bigint_free(bi);
-
-  // int i =  __builtin_clz(0);
-  // printf("%i\n", i);
 
   return 0;
 }
