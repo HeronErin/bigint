@@ -10,17 +10,13 @@
 #include <endian.h>
 
 int main() {
-  BigInt *x = bigint_from(1);
-  memset(x->segments[0], -1, SEGMENT_SIZE);
-  x->size++;
-  x->segments[1] = aligned_alloc(32, SEGMENT_SIZE);
-  memset(x->segments[1], 0, SEGMENT_SIZE);
+  BigInt *x = bigint_from(2);
 
 
-  BigInt *y = bigint_from(5);
+  BigInt *y = bigint_from(1);
 
 
-  bigint_adc(&x, y);
+  bigint_sbc(&x, y);
 
   // bigint_adc(&x, y);
   // bigint_free(bi);

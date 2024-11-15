@@ -150,10 +150,10 @@ char _expanded_adc_carry(unsigned char carry, void *x) {
     return carry;
 }
 
-char _segment_sdc(unsigned char carry, void *x, void *y, size_t s) {
+char _segment_sbc(unsigned char carry, void *x, void *y) {
     uint64_t *dst = x;
     uint64_t *src = y;
-    uint64_t *end = (uint64_t *) ((char *) x + s);
+    uint64_t *end = (uint64_t *) ((char *) x + SEGMENT_SIZE);
 
 
     while (dst != end) {
@@ -167,6 +167,23 @@ char _segment_sdc(unsigned char carry, void *x, void *y, size_t s) {
     return carry;
 }
 
+char _expanded_sbc_carry(unsigned char carry, void *x) {
+    uint64_t *dst = x;
+    uint64_t *end = (uint64_t *) ((char *) x + SEGMENT_SIZE);
+
+
+    while (dst != end) {
+        carry = _subborrow_u64(carry, dst[0], 0, (unsigned long long *) &dst[0]);
+        carry = _subborrow_u64(carry, dst[1], 0, (unsigned long long *) &dst[1]);
+        carry = _subborrow_u64(carry, dst[2], 0, (unsigned long long *) &dst[2]);
+        carry = _subborrow_u64(carry, dst[3], 0, (unsigned long long *) &dst[3]);
+        dst += 4;
+    }
+    return carry;
+}
+
+
+#
 
 // *a +=  b
 void bigint_adc(BigInt **a, BigInt *b) {
@@ -207,3 +224,26 @@ void bigint_adc(BigInt **a, BigInt *b) {
     a_->size++;
 }
 
+char bigint_sbc(BigInt **a, BigInt *b) {
+    BigInt *a_ = *a;
+
+    // Pad A to be as large as B
+    if (a_->size < b->size) {
+        for (size_t i = a_->size; i < b->size; i++) {
+            char *new_seg = aligned_alloc(32, SEGMENT_SIZE);
+            memset(new_seg, 0, SEGMENT_SIZE);
+            a_->segments[i] = new_seg;
+        }
+        a_->size = b->size;
+    }
+    unsigned char carry = 0;
+    for (size_t i = 0; i < b->size; i++) {
+        carry = _segment_sbc(carry, a_->segments[i], b->segments[i]);
+    }
+
+    if (a_->size > b->size) {
+        for (size_t i = b->size; i < a_->size; i++)
+            _expanded_sbc_carry(carry, a_->segments[i]);
+    }
+    return carry;
+}

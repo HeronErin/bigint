@@ -117,6 +117,6 @@ void bigint_byte_shr_bsrli(BigInt **ptr, size_t cnt);
 // Param b: Number to add
 void bigint_adc(BigInt **a, BigInt *b);
 
-
+char bigint_sbc(BigInt **a, BigInt *b);
 
 
