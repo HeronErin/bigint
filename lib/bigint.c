@@ -1,8 +1,8 @@
 #include "bigint.h"
-#include "lib/debug.h"
 #include "lib/output.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <immintrin.h>
 
 char *bigint_hexdump(const BigInt *restrict bigint) {
     // Upperbound of possible output sizes
@@ -135,7 +135,7 @@ char _segment_adc(unsigned char carry, void *x, void *y) {
     return carry;
 }
 
-char _expanded_adc_carry(unsigned char carry, void *x) {
+static inline char _expanded_adc_carry(unsigned char carry, void *x) {
     uint64_t *dst = x;
     uint64_t *end = (uint64_t *) ((char *) x + SEGMENT_SIZE);
 
@@ -150,7 +150,7 @@ char _expanded_adc_carry(unsigned char carry, void *x) {
     return carry;
 }
 
-char _segment_sbc(unsigned char carry, void *x, void *y) {
+static inline char _segment_sbc(unsigned char carry, void *x, void *y) {
     uint64_t *dst = x;
     uint64_t *src = y;
     uint64_t *end = (uint64_t *) ((char *) x + SEGMENT_SIZE);
@@ -167,7 +167,7 @@ char _segment_sbc(unsigned char carry, void *x, void *y) {
     return carry;
 }
 
-char _expanded_sbc_carry(unsigned char carry, void *x) {
+static inline char _expanded_sbc_carry(unsigned char carry, void *x) {
     uint64_t *dst = x;
     uint64_t *end = (uint64_t *) ((char *) x + SEGMENT_SIZE);
 
@@ -182,17 +182,19 @@ char _expanded_sbc_carry(unsigned char carry, void *x) {
     return carry;
 }
 
+static inline __m256i _swap_lanes(__m256i a) {
+    return _mm256_permute4x64_epi64(a, 0b01001110);
+}
 
-#
 
 // *a +=  b
 void bigint_adc(BigInt **a, BigInt *b) {
     BigInt *a_ = *a;
     size_t min_size = a_->size < b->size ? a_->size : b->size;
     unsigned char carry = 0;
-    for (size_t i = 0; i < min_size; i++) {
+    for (size_t i = 0; i < min_size; i++)
         carry = _segment_adc(carry, a_->segments[i], b->segments[i]);
-    }
+
 
     if (a_->size > b->size) {
         // Carry the Bitch onward
@@ -237,13 +239,12 @@ char bigint_sbc(BigInt **a, BigInt *b) {
         a_->size = b->size;
     }
     unsigned char carry = 0;
-    for (size_t i = 0; i < b->size; i++) {
+    for (size_t i = 0; i < b->size; i++)
         carry = _segment_sbc(carry, a_->segments[i], b->segments[i]);
-    }
 
-    if (a_->size > b->size) {
+
+    if (a_->size > b->size)
         for (size_t i = b->size; i < a_->size; i++)
             _expanded_sbc_carry(carry, a_->segments[i]);
-    }
     return carry;
 }

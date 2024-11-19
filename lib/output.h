@@ -47,9 +47,16 @@ static inline void bin_to_hex_32(void *restrict dst, __m256i data) {
 
 static inline void print_vec(__m256i data) {
     char dst[65];
+    dst[64] = 0;
+
     bin_to_hex_32(dst, data);
     printf("%s\n", dst);
 }
+
+static inline void print_vec_r(__m256i data) {
+    print_vec(_reverse(data));
+}
+
 
 // Safety: dst MUST BE >= n*2 + 2
 void dump_hex_into(void *restrict dst, const void *restrict src, size_t n);

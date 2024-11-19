@@ -1,4 +1,5 @@
 #pragma once
+#include <immintrin.h>
 #include <endian.h>
 
 
@@ -120,3 +121,4 @@ void bigint_adc(BigInt **a, BigInt *b);
 char bigint_sbc(BigInt **a, BigInt *b);
 
 
+void _mul_64x64_to_128(__m256i a, __m256i b, __m256i *out);
